@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../Styles/normalize.css">
-    <link rel="stylesheet" href="../Styles/homepagina.css">
+    <link rel="stylesheet" href="Styles/normalize.css">
+    <link rel="stylesheet" href="Styles/homepagina.css">
     <title>Sole Machina</title>
 </head>
 
@@ -17,11 +17,11 @@
 
         <nav>
             <div class="topnav">
-                <a class="active" href="index.php">Startpagina</a>
-                <a href="winkelmand-uitgelogd.php">Winkelmandje</a>
-                <a href="bestellingen-uitgelogd.php">Bestellingen</a>
-                <a href="profiel-uitgelogd.php">Profiel</a>
-                <a href="login.php">Login</a>
+                <a class="active" href="startpagina-ingelogd.php">Startpagina</a>
+                <a href="winkelmand.php">Winkelmandje</a>
+                <a href="bestellingen.php">Bestellingen</a>
+                <a href="profiel.php">Profiel</a>
+                <a href="index.php">Uitloggen</a>
                 <a class="split" href="privacy.php">Privacy</a>
             </div>
         </nav>
@@ -141,11 +141,11 @@
             </div>
         </main>
         <footer>
-            <a href="index.php">Legal information |</a>
+            <a href="startpagina-ingelogd.php">Legal information |</a>
             <a href="privacy.php">Privacy policy |</a>
-            <a href="index.php">Accessibility statement |</a>
-            <a href="index.php">@ 2024 Sole Machina |</a>
-            <a href="index.php">Cookie settings</a>
+            <a href="startpagina-ingelogd.php">Accessibility statement |</a>
+            <a href="startpagina-ingelogd.php">@ 2024 Sole Machina |</a>
+            <a href="startpagina-ingelogd.php">Cookie settings</a>
         </footer>
     </div>
 </body>

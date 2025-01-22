@@ -1,0 +1,610 @@
+    html, body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        height: 100%;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    body {
+        display: flex;
+        flex-direction: column;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    /* START LAYOUT */
+
+    .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #f9f9f9;
+    }
+
+    header {
+        background: aquamarine;
+        padding: 2rem;
+        width: 96.6%;
+        text-align: center;
+    }
+
+    h1 {
+        display: grid;
+        align-items: center;
+        justify-items: center;
+    }
+
+    nav {
+        background: coral;
+        padding: 2rem;
+        display: flex;
+        width: 96.6%;
+        justify-content: center;
+        align-items: center;
+    }
+
+    main {
+        background: bisque;
+        width: 96.6%;
+        padding: 2rem;
+        text-align: center;
+        flex: 1;
+    }
+    /* EINDE LAYOUT */
+
+    /* PIZZA MENu STYLES */
+    .menu-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 20px;
+    }
+    
+    .menu-box {
+        width: 30%;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+        box-sizing: border-box;
+        text-align: center;
+    }
+    
+    .menu-box h3 {
+        margin-bottom: 10px;
+    }
+    
+    .menu-box h4 {
+        margin-bottom: 10px;
+        color: #ff4d4d;
+    }
+    
+    .menu-box select {
+        margin-bottom: 10px;
+        padding: 5px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .menu-box button {
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    
+    .menu-box button:hover {
+        background-color: #45a049;
+    }
+
+    /* Responsive Image Styles */
+    .responsive-img {
+        width: 100%;
+        height: auto;
+    }
+
+    /* START NAVBAR */
+    .topnav {
+        background-color: #333;
+        overflow: hidden;
+        width: fit-content;
+    }
+
+    .topnav a {
+        float: left;
+        color: #f2f2f2;
+        text-align: center;
+        padding: 14px 16px;
+        text-decoration: none;
+        font-size: 17px;
+    }
+
+    .topnav a:hover {
+        background-color: #ddd;
+        color: black;
+    }
+
+    .topnav a:active {
+        background-color: #04AA6D;
+        color: white;
+    }
+
+    .topnav a.split {
+        float: right;
+        background-color: #04AA6D;
+        color: white;
+    }
+    /* EINDE NAVBAR */
+
+    /* START MAIN LAYOUT */
+
+    h2 {
+        margin-bottom: 1rem;
+    }
+
+    .knop {
+        border: 0;
+        line-height: 2.5;
+        padding: 0 20px;
+        font-size: 1rem;
+        text-align: center;
+        color: #fff;
+        text-shadow: 1px 1px 1px #000;
+        border-radius: 10px;
+        background-color: rgba(220, 0, 0, 1);
+        background-image: linear-gradient(
+        to top left,
+        rgba(0, 0, 0, 0.2),
+        rgba(0, 0, 0, 0.2) 30%,
+        rgba(0, 0, 0, 0)
+        );
+        box-shadow:
+        inset 2px 2px 3px rgba(255, 255, 255, 0.6),
+        inset -2px -2px 3px rgba(0, 0, 0, 0.6);
+        cursor: pointer;
+    }
+
+    .knop:hover {
+        background-color: rgb(255, 71, 71);
+    }
+
+    .knop:active {
+        box-shadow:
+            inset -2px -2px 3px rgba(255, 255, 255, 0.6),
+            inset 2px 2px 3px rgba(0, 0, 0, 0.6);
+    }
+      
+    .form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    }
+    
+    .form input {
+    margin: 5px;
+    }
+    
+    .zoekbalk {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    }
+
+    /* EINDE MAIN LAYOUT */
+
+    /* BEGIN WINKELMANDJE */
+
+    .shopping-cart {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+    }
+    
+    .shopping-cart h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    
+    table th, table td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    table th {
+        background-color: #f2f2f2;
+    }
+    
+    table input[type="number"] {
+        width: 50px;
+        padding: 5px;
+        text-align: center;
+    }
+    
+    table button {
+        padding: 5px 10px;
+        background-color: #ff4d4d;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    
+    table button:hover {
+        background-color: #ff1a1a;
+    }
+    
+    .cart-total {
+        text-align: right;
+        margin-top: 20px;
+    }
+    
+    .cart-total h3 {
+        margin-bottom: 10px;
+    }
+    
+    .cart-total button {
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    
+    .cart-total button:hover {
+        background-color: #45a049;
+    }
+
+    /* EINDE WINKELMANDJE */
+
+    /* BEGIN PROFIEL */
+        
+    .profile {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+    }
+
+    .profile h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .profile-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .profile-info p {
+        margin-bottom: 10px;
+        font-size: 1rem;
+    }
+
+    .profile-info p strong {
+        font-weight: bold;
+    }
+
+    .profile button {
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .profile button:hover {
+        background-color: #45a049;
+    }
+
+    /* EINDE PROFIEL */
+
+    /* START BESTELLINGEN */
+
+    .bestellingen {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+    }
+    
+    .bestellingen h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .bestellingen-info {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .bestelling button {
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    .bestelling button:hover {
+        background-color: #45a049;
+    }
+    
+    .bestelling {
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #fff;
+    }
+    
+    .bestelling h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+    }
+
+    .bestelling-sub {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .bestelling-sub p {
+        flex: 1 1 45%;
+        margin: 5px 0;
+    }
+    
+    .bestelling-sub p strong {
+        font-weight: bold;
+    }
+
+    .bezorgadres {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .status-select {
+        display: flex;
+        padding: 5px;
+        margin: 5px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* EINDE BESTELLINGEN */
+
+    /* START BESTELLING AFHANDELEN */
+
+    .order-form {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+    }
+    
+    .order-form h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .order-form form {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .order-form label {
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    
+    .order-form input {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .order-form button {
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        text-align: center;
+    }
+    
+    .order-form button:hover {
+        background-color: #45a049;
+    }
+
+    /* EINDE BESTELLING AFHANDELEN */
+
+    /* START PRIVACY VERKLARING */
+
+    .privacy {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+    }
+    
+    .privacy h2 {
+        margin-top: 20px;
+    }
+    
+    .privacy p, .privacy ul {
+        margin-bottom: 20px;
+    }
+    
+    .privacy ul {
+        list-style-type: disc;
+        padding-left: 20px;
+    }
+
+    /* EINDE PRIVACY VERKLARING */
+
+    /* LOGIN PAGINA */
+
+    .login {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: auto;
+    }
+
+    .login body {
+        font-family: Arial, Helvetica, sans-serif;
+        background-color: aquamarine;
+    }
+
+    .login .container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: aquamarine;
+        height: 100%;
+        padding: 20px;
+
+    }
+
+    .login header {
+        width: 100vw;
+        padding: 1em;
+        background-color: aquamarine;
+        color: black;
+        font-size: 2rem;
+        text-align: center;
+    }
+
+    .login main {
+        background-color: #f9f9f9;
+        width: 30%;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        box-sizing: border-box;
+        margin-bottom: 150px;
+    }
+
+    .login form {
+        width: 100%;
+    }
+
+    .login form label {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 10px;
+    }
+
+    .login form input{
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    #inloggen, #registreren {
+        padding: 10px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 10px;
+    }
+    
+    #inloggen:hover, #registreren:hover {
+        background-color: #45a049;
+    }
+
+    .submit {
+        padding: 10px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 10px;
+    }
+    
+    .submit:hover {
+        background-color: #e7e7e7;
+        cursor: pointer;
+    }
+
+    .login h2 {
+        padding: 10px;
+        text-align: center;
+    }
+    
+    .login button {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-bottom: 10px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .login button:hover {
+        background-color: #e7e7e7;
+    }
+
+    /* START FOOTER */
+
+    footer {
+        width: 96.6%;
+        background: #333;
+        padding: 2rem;
+        text-align: center;
+        color: white;
+    }
+
+    footer a {
+        text-decoration: none;
+        color: white;
+    }
+
+    /* EINDE FOOTER */
