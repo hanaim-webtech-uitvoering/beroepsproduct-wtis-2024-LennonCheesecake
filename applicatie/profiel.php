@@ -1,5 +1,28 @@
+<?php
+session_start();
+require_once 'db_connection.php';
+
+if (!isset($_SESSION['username'])) {
+    header('Location: login.php');
+    exit;
+}
+
+// Haal de gebruikersgegevens op uit de database
+$db = maakVerbinding();
+$sql = "SELECT username, first_name, last_name, address FROM [Users] WHERE username = :gebruikersnaam";
+$stmt = $db->prepare($sql);
+$stmt->execute(['gebruikersnaam' => $_SESSION['username']]);
+$user = $stmt->fetch();
+
+if (!$user) {
+    // Gebruiker bestaat niet meer in de database
+    echo "<p>Gebruiker niet gevonden.</p>";
+    exit;
+}
+?>
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 
 <head>
     <meta charset="UTF-8">
@@ -12,6 +35,7 @@
 <body>
     <header>
         <h1>Profiel</h1>
+        <p>Welkom, <?= htmlspecialchars($user['username']) ?></p>
     </header>
     
     <nav>
@@ -20,7 +44,7 @@
             <a href="winkelmand.php">Winkelmandje</a>
             <a href="bestellingen.php">Bestellingen</a>
             <a href="profiel.php">Profiel</a>
-            <a href="index.php">Uitloggen</a>
+            <a href="logout.php">Uitloggen</a>
             <a class="split" href="privacy.php">Privacy</a>
         </div>
     </nav>
@@ -29,11 +53,10 @@
         <section class="profile">
             <h2>Uw Profiel</h2>
             <div class="profile-info">
-                <p><strong>Gebruikersnaam:</strong> johndoe</p>
-                <p><strong>Voornaam:</strong> John</p>
-                <p><strong>Achternaam:</strong> Doe</p>
-                <p><strong>Adres:</strong> Kaasstraat 26</p>
-
+                <p><strong>Gebruikersnaam:</strong> <?= htmlspecialchars($user['username']) ?></p>
+                <p><strong>Voornaam:</strong> <?= htmlspecialchars($user['first_name']) ?></p>
+                <p><strong>Achternaam:</strong> <?= htmlspecialchars($user['last_name']) ?></p>
+                <p><strong>Adres:</strong> <?= htmlspecialchars($user['address']) ?></p>
                 <button onclick="window.location.href='bestellingen.php'">Bestellingen Bekijken</button>
             </div>
         </section>
@@ -47,5 +70,4 @@
         <a href="startpagina-ingelogd.php">Cookie settings</a>
     </footer>
 </body>
-
 </html>

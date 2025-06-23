@@ -1,3 +1,18 @@
+<?php
+session_start();
+if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'Medewerker') {
+    header('Location: medewerker-login.php');
+    exit;
+}
+
+// Debug: Toon sessiegegevens als ze bestaan
+if (isset($_SESSION['username'])) {
+    echo "<div style='background: #dfd; padding: 10px; margin: 10px 0;'>Sessie actief!<br>";
+    echo "Gebruikersnaam: " . $_SESSION['username'] . "<br>";
+    echo "Rol: " . $_SESSION['role'] . "</div>";
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -18,7 +33,7 @@
         <div class="topnav">
             <a href="medewerker-bestellingen.php">Bestellingen</a>
             <a href="medewerker-profiel.php">Profiel</a>
-            <a href="index.php">Uitloggen</a>
+            <a href="logout.php">Uitloggen</a>
         </div>
     </nav>
 
@@ -27,7 +42,7 @@
             <h2>Welkom Pietertje</h2>
             <div class="profile-info">
                 <button onclick="window.location.href='medewerker-bestellingen.php'">Bekijk en Beheer Bestellingen</button>
-                <button id="uitlogKnop" onclick="window.location.href='index.php'">Uitloggen</button>
+                <button id="uitlogKnop" onclick="window.location.href='logout.php'">Uitloggen</button>
             </div>
         </section>
     </main>

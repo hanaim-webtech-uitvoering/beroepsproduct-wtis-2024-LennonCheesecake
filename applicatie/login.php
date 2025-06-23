@@ -1,3 +1,36 @@
+<?php
+require_once 'db_connection.php'; // Verbind met de database
+require_once 'sanitizeS.php';      // Functie om invoer te schonen
+
+session_start(); // Start een sessie voor ingelogde gebruikers
+
+$melding = ''; // Voor fout- of succesmeldingen
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Haal en schoon de invoer op
+    $gebruikersnaam = sanitize($_POST['gebruikersnaam']);
+    $wachtwoord = sanitize($_POST['wachtwoord']);
+
+    // Zoek gebruiker op in de database
+    $db = maakVerbinding();
+    $sql = "SELECT * FROM [Users] WHERE username = :gebruikersnaam";
+    $stmt = $db->prepare($sql);
+    $stmt->execute(['gebruikersnaam' => $gebruikersnaam]);
+    $user = $stmt->fetch();
+
+    // Controleer of gebruiker bestaat en wachtwoord klopt
+    if ($user && password_verify($wachtwoord, $user['password'])) {
+        // Inloggen gelukt, sla info op in sessie
+        $_SESSION['username'] = $user['username'];
+        $_SESSION['role'] = $user['role'];
+        header('Location: profiel.php');
+        exit;
+    } else {
+        $melding = 'Ongeldige gebruikersnaam of wachtwoord.';
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -19,9 +52,16 @@
 
             <main>
                 <h2>Inloggen</h2>
-                <form action="profiel.php" method="get">
+
+                <!-- maak een witruimte voor foutmeldingen -->
+                <div class="foutmelding">
+                    <?php if (!empty($melding)) : ?>
+                        <p><?= htmlspecialchars($melding) ?></p>
+                    <?php endif; ?>
+                </div>
+                <form action="login.php" method="post">
                     <label for="gebruikersnaam">Gebruikersnaam</label>
-                    <input type="text" name="gebruikersnaam" id="gebruikersnaam" minlength="6" required>
+                    <input type="text" name="gebruikersnaam" id="gebruikersnaam" minlength="4" required value="<?= isset($gebruikersnaam) ? htmlspecialchars($gebruikersnaam) : '' ?>">
 
                     <label for="wachtwoord">Wachtwoord</label>
                     <input type="password" name="wachtwoord" id="wachtwoord" minlength="6" required>

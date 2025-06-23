@@ -20,7 +20,7 @@
                 <a class="active" href="index.php">Startpagina</a>
                 <a href="winkelmand-uitgelogd.php">Winkelmandje</a>
                 <a href="bestellingen-uitgelogd.php">Bestellingen</a>
-                <a href="profiel-uitgelogd.php">Profiel</a>
+                <a href="profiel.php">Profiel</a>
                 <a href="login.php">Login</a>
                 <a class="split" href="privacy.php">Privacy</a>
             </div>
