@@ -4,8 +4,9 @@ require_once 'sanitizeS.php';      // Functie om invoer te schonen
 
 session_start(); // Start een sessie
 
-$melding = '';
+$melding = ''; // Voor foutmeldingen
 
+// Verwerk het inlogformulier als er is gepost
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Haal en schoon de invoer op
     $gebruikersnaam = sanitize($_POST['gebruikersnaam']);
@@ -26,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: medewerker-profiel.php');
         exit;
     } else {
+        // Foutmelding bij ongeldige inlog of geen medewerker-rechten
         $melding = 'Ongeldige gebruikersnaam, wachtwoord of geen medewerker-rechten.';
     }
 }
@@ -51,11 +53,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <main>
                 <h2>Medewerker Login</h2>
+                <!-- Toon foutmelding indien aanwezig -->
                 <div class="foutmelding">
                     <?php if (!empty($melding)) : ?>
                         <p><?= htmlspecialchars($melding) ?></p>
                     <?php endif; ?>
+                    <?php
+                    // Toon sessiemelding indien aanwezig (bijv. doorverwijzing vanaf klant-login)
+                    if (isset($_SESSION['melding'])) {
+                        echo '<p>' . htmlspecialchars($_SESSION['melding']) . '</p>';
+                        unset($_SESSION['melding']);
+                    }
+                    ?>
                 </div>
+                <!-- Inlogformulier voor medewerkers -->
                 <form action="medewerker-login.php" method="post">
                     <label for="gebruikersnaam">Gebruikersnaam</label>
                     <input type="text" name="gebruikersnaam" id="gebruikersnaam" minlength="4" required value="<?= isset($gebruikersnaam) ? htmlspecialchars($gebruikersnaam) : '' ?>">
@@ -65,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <input class="submit" id="inloggen" type="submit" value="Inloggen als medewerker">
                 </form>
+                <!-- Navigatieknoppen -->
                 <button onclick="location.href='registreren.php'">Nog geen account? Registreer hier</button>
                 <button onclick="location.href='index.php'">Doorgaan als gast</button>
                 <button onclick="location.href='login.php'">Klant login</button>

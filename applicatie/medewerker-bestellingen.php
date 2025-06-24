@@ -1,5 +1,60 @@
+<?php
+session_start();
+require_once 'db_connection.php';
+
+// Alleen toegankelijk voor medewerkers
+if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'Medewerker') {
+    header('Location: medewerker-login.php');
+    exit;
+}
+
+$db = maakVerbinding();
+
+// Haal alle bestellingen op uit de database
+$stmt = $db->prepare("SELECT * FROM [Pizza_Order] ORDER BY datetime DESC");
+$stmt->execute();
+$bestellingen = $stmt->fetchAll();
+
+// Haal per bestelling de producten op
+foreach ($bestellingen as &$bestelling) {
+    $stmtProd = $db->prepare("SELECT p.product_name, p.quantity, pr.price 
+        FROM [Pizza_Order_Product] p
+        JOIN [Product] pr ON p.product_name = pr.name
+        WHERE p.order_id = :order_id");
+    $stmtProd->execute(['order_id' => $bestelling['order_id']]);
+    $bestelling['producten'] = $stmtProd->fetchAll();
+}
+unset($bestelling); // Verbreek de referentie na gebruik
+
+// Groepeer bestellingen per klantnaam
+$klanten = [];
+foreach ($bestellingen as $bestelling) {
+    $klant = $bestelling['client_name'];
+    if (!isset($klanten[$klant])) {
+        $klanten[$klant] = [];
+    }
+    $klanten[$klant][] = $bestelling;
+}
+
+// Functie om de status van een bestelling om te zetten naar tekst
+function statusText($status) {
+    switch ($status) {
+        case 1: return "Bestelling ontvangen";
+        case 2: return "In behandeling";
+        case 3: return "Onderweg";
+        case 4: return "Geannuleerd";
+        case 5: return "Bezorgd";
+        default: return "Onbekend";
+    }
+}
+
+// Klanten ophalen voor de dropdown
+$stmtKlanten = $db->prepare("SELECT DISTINCT client_name FROM [Pizza_Order]");
+$stmtKlanten->execute();
+$klantenLijst = $stmtKlanten->fetchAll(PDO::FETCH_COLUMN);
+?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 
 <head>
     <meta charset="UTF-8">
@@ -14,65 +69,66 @@
         <h1>Medewerker Bestellingen Overzicht</h1>
     </header>
     
+    <!-- Navigatiebalk voor medewerkers -->
     <nav>
         <div class="topnav">
             <a href="medewerker-bestellingen.php">Bestellingen</a>
             <a href="medewerker-profiel.php">Profiel</a>
-            <a href="index.php">Uitloggen</a>
+            <a href="logout.php">Uitloggen</a>
         </div>
     </nav>
 
     <main>
         <section class="bestellingen">
             <h2>Huidige Bestellingen</h2>
-            <div class="bestellingen-info">
-                <div class="bestelling">
-                    <h3>Bestelling 1: John Doe</h3>
-                    <div class="bestelling-sub">
-                        <p><strong>Product:</strong> Pizza Margherita</p>
-                        <p><strong>Aantal:</strong> 1</p>
-                        <p><strong>Prijs:</strong> €9.00</p>
-                        <p><strong>Status:</strong> Onderweg</p>
-                    </div>
-                    <div class="bestelling-sub">
-                        <p><strong>Product:</strong> Pizza Pepperoni</p>
-                        <p><strong>Aantal:</strong> 1</p>
-                        <p><strong>Prijs:</strong> €10.00</p>
-                        <p><strong>Status:</strong> Onderweg</p>
-                    </div>
-                        <strong class="bezorgadres">Bezorgadres: Kaasstraat 26</strong>
-                        <button onclick="location.href='medewerker-bestelling-details-johndoe.php '">Bestelling Details</button>
-                        <button onclick="location.href='medewerker-bestelling-wijzigen.php '">Bestelling wijzigen</button>
-                    </div>
+            
+            <!-- Klant selectie formulier -->
+            <form method="get" style="margin-bottom:20px;">
+                <label for="klant_select">Selecteer klant:</label>
+                <select name="klant" id="klant_select" onchange="this.form.submit()">
+                    <option value="">-- Kies een klant --</option>
+                    <?php foreach (array_keys($klanten) as $klant): ?>
+                        <option value="<?= htmlspecialchars($klant) ?>" <?= (isset($_GET['klant']) && $_GET['klant'] === $klant) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($klant) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </form>
 
-                <div class="bestelling">
-                    <h3>Bestelling 2: Karel Pas</h3>
-                    <div class="bestelling-sub">
-                        <p><strong>Product:</strong> Pizza Margherita</p>
-                        <p><strong>Aantal:</strong> 1</p>
-                        <p><strong>Prijs:</strong> €9.00</p>
-                        <p><strong>Status:</strong> Bestelling ontvangen</p>
-                    </div>
-                    <div class="bestelling-sub">
-                        <p><strong>Product:</strong> Pizza Quattro Stagioni</p>
-                        <p><strong>Aantal:</strong> 2</p>
-                        <p><strong>Prijs:</strong> €23.00</p>
-                        <p><strong>Status:</strong> Bestelling ontvangen</p>
-                    </div>
-                    <div class="bestelling-sub">
-                        <p><strong>Product:</strong> Coca Cola</p>
-                        <p><strong>Aantal:</strong> 1</p>
-                        <p><strong>Prijs:</strong> €2.50</p>
-                        <p><strong>Status:</strong> Bestelling ontvangen</p>
-                    </div>
-                        <strong class="bezorgadres">Bezorgadres: Vlinderlaan 12</strong>
-                        <button onclick="location.href='medewerker-bestelling-details-karelpas.php '">Bestelling Details</button>
-                        <button onclick="location.href='medewerker-bestelling-wijzigen.php'">Bestelling wijzigen</button>
-                </div>
+            <div class="bestellingen-info">
+                <?php
+                // Haal gekozen klant op uit de GET-parameter
+                $gekozenKlant = $_GET['klant'] ?? '';
+                if ($gekozenKlant && isset($klanten[$gekozenKlant])): ?>
+                    <h3>Bestellingen van <?= htmlspecialchars($gekozenKlant) ?></h3>
+                    <?php foreach ($klanten[$gekozenKlant] as $bestelling): ?>
+                        <div class="bestelling">
+                            <h4>
+                                Bestelling #<?= htmlspecialchars($bestelling['order_id']) ?>
+                                (<?= htmlspecialchars($bestelling['datetime']) ?>)
+                            </h4>
+                            <p><strong>Status:</strong> <?= statusText($bestelling['status']) ?></p>
+                            <?php foreach ($bestelling['producten'] as $product): ?>
+                                <div class="bestelling-sub">
+                                    <p><strong>Product:</strong> <?= htmlspecialchars($product['product_name']) ?></p>
+                                    <p><strong>Aantal:</strong> <?= (int)$product['quantity'] ?></p>
+                                    <p><strong>Prijs:</strong> €<?= number_format($product['price'], 2, ',', '.') ?></p>
+                                </div>
+                            <?php endforeach; ?>
+                            <strong class="bezorgadres">Bezorgadres: <?= htmlspecialchars($bestelling['address']) ?></strong>
+                            <br>
+                            <!-- Knop om bestelling te wijzigen -->
+                            <a href="medewerker-bestelling-wijzigen.php?order_id=<?= urlencode($bestelling['order_id']) ?>" class="wijzig-knop" style="margin-top:10px;display:inline-block;">Wijzig bestelling</a>
+                        </div>
+                    <?php endforeach; ?>
+                <?php elseif ($gekozenKlant): ?>
+                    <p>Geen bestellingen gevonden voor deze klant.</p>
+                <?php endif; ?>
             </div>
         </section>
     </main>
 
+    <!-- Footer met links naar medewerker-profiel, behalve privacy -->
     <footer>
         <a href="medewerker-profiel.php">Legal information |</a>
         <a href="privacy.php">Privacy policy |</a>
@@ -81,5 +137,4 @@
         <a href="medewerker-profiel.php">Cookie settings</a>
     </footer>
 </body>
-
 </html>

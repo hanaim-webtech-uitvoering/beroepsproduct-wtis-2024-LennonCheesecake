@@ -86,7 +86,7 @@ if (isset($_POST['registreren'])) {
         if ($result['COUNT'] > 0) {
             $melding = 'Gebruikersnaam bestaat al in de database!';
         } else {
-            // Voeg nieuwe gebruiker toe
+            // Voeg nieuwe gebruiker toe aan de database
             $sql = "INSERT INTO [Users] (username, password, first_name, last_name, address, role)
                     VALUES (:gebruikersnaam, :wachtwoord, :voornaam, :achternaam, :adres, 'Client')";
             $query = $db->prepare($sql);
@@ -122,7 +122,7 @@ if (isset($_POST['registreren'])) {
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 
 <head>
     <meta charset="UTF-8">
@@ -142,9 +142,10 @@ if (isset($_POST['registreren'])) {
 
             <main>
                 <h2>Registreren</h2>
+                <!-- Registratieformulier -->
                 <form action="" method="post">
                     <label for="gebruikersnaam">Gebruikersnaam</label>
-                    <input type="text" name="gebruikersnaam" id="gebruikersnaam">
+                    <input type="text" name="gebruikersnaam" id="gebruikersnaam" value="<?= htmlspecialchars($gebruikersnaam) ?>">
 
                     <label for="wachtwoord">Wachtwoord</label>
                     <input type="password" name="wachtwoord" id="wachtwoord">
@@ -153,24 +154,25 @@ if (isset($_POST['registreren'])) {
                     <input type="password" name="herhaal-wachtwoord" id="herhaal-wachtwoord">
 
                     <label for="voornaam">Naam</label>
-                    <input type="text" name="voornaam" id="voornaam">
+                    <input type="text" name="voornaam" id="voornaam" value="<?= htmlspecialchars($voornaam) ?>">
 
                     <label for="achternaam">Achternaam</label>
-                    <input type="text" name="achternaam" id="achternaam">
+                    <input type="text" name="achternaam" id="achternaam" value="<?= htmlspecialchars($achternaam) ?>">
 
                     <label for="adres">Adres (optioneel)</label>
-                    <input type="text" name="adres" id="adres">
+                    <input type="text" name="adres" id="adres" value="<?= htmlspecialchars($adres) ?>">
 
                     <input class="submit" id="registreren" type="submit" value="registreren" name="registreren">
                 </form>
+                <!-- Navigatieknoppen -->
                 <button onclick="location.href='login.php'">Al een account? Log hier in</button>
                 <button onclick="location.href='index.php'">Doorgaan als gast</button>
                 <button onclick="location.href='medewerker-login.php'">Medewerker login</button>
+                <!-- Toon foutmeldingen en succesmelding -->
                 <?= $foutmelding ?>
                 <?= $melding ?>
             </main>
         </div>
     </div>
 </body>
-
 </html>

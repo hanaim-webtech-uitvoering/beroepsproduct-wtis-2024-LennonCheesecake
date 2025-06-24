@@ -10,19 +10,20 @@ while ($row = $stmt->fetch()) {
     $prijzen[$row['name']] = $row['price'];
 }
 
-// Bestelling bevestigen en opslaan in database
+// Variabelen voor meldingen en gastgegevens
 $bestelMelding = '';
 $gastAdres = '';
+$gastEmail = '';
 $adresFout = '';
 
+// Verwerk bestelling als het formulier is verzonden
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bevestig_bestelling']) && !empty($_SESSION['winkelwagen'])) {
-    // 1. Verzamel klantgegevens
     $client_username = isset($_SESSION['username']) ? $_SESSION['username'] : null;
     $client_name = '';
     $address = '';
 
     if ($client_username) {
-        // Haal naam en adres op uit de database
+        // Haal naam en adres op uit de database voor ingelogde gebruiker
         $stmtUser = $db->prepare("SELECT first_name, last_name, address FROM [Users] WHERE username = :username");
         $stmtUser->execute(['username' => $client_username]);
         $user = $stmtUser->fetch();
@@ -31,11 +32,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bevestig_bestelling']
             $address = $user['address'];
         }
     } else {
-        // Gast-bestelling: adres verplicht
+        // Gast-bestelling: adres en e-mail verplicht
         $client_name = 'Gast';
         $gastAdres = isset($_POST['gast_adres']) ? trim($_POST['gast_adres']) : '';
+        $gastEmail = isset($_POST['gast_email']) ? trim($_POST['gast_email']) : '';
         if (empty($gastAdres)) {
             $adresFout = "Vul uw adres in om te bestellen.";
+        } elseif (empty($gastEmail)) {
+            $adresFout = "Vul uw e-mailadres in om te bestellen.";
         } else {
             $address = $gastAdres;
         }
@@ -43,13 +47,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bevestig_bestelling']
 
     // Alleen verder als er geen adresfout is
     if (empty($adresFout)) {
-        // 2. Personeelslid is nog niet bekend bij bestelling plaatsen, zet op NULL
-        $personnel_username = 'LennonM';
+        // Zet het personeel_username vast (bijvoorbeeld 'LennonM')
+        $personnel_username = 'TestM';
 
-        // 3. Status op 1 (bijvoorbeeld 'nieuw')
+        // Status op 1 (Bestelling ontvangen)
         $status = 1;
 
-        // 4. Voeg bestelling toe aan Pizza_Order
+        // Voeg bestelling toe aan Pizza_Order
         $insertOrder = $db->prepare("INSERT INTO [Pizza_Order] (client_username, client_name, personnel_username, datetime, status, address)
             VALUES (:client_username, :client_name, :personnel_username, GETDATE(), :status, :address)");
         $insertOrder->execute([
@@ -60,10 +64,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bevestig_bestelling']
             'address' => $address
         ]);
 
-        // 5. Haal het order_id op
+        // Haal het order_id op van de zojuist toegevoegde bestelling
         $orderId = $db->lastInsertId();
 
-        // 6. Voeg producten toe aan Pizza_Order_Product
+        // Voeg producten toe aan Pizza_Order_Product
         $insertProduct = $db->prepare("INSERT INTO [Pizza_Order_Product] (order_id, product_name, quantity) VALUES (:order_id, :product_name, :quantity)");
         foreach ($_SESSION['winkelwagen'] as $naam => $aantal) {
             $insertProduct->execute([
@@ -73,30 +77,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bevestig_bestelling']
             ]);
         }
 
-        // 7. Leeg het winkelmandje en geef een melding
+        // Leeg het winkelmandje en geef een melding
         $_SESSION['winkelwagen'] = [];
-        $bestelMelding = "Bestelling succesvol geplaatst!";
+        if (!$client_username && !empty($gastEmail)) {
+            $bestelMelding = "Bestelling succesvol geplaatst! De bevestiging is verstuurd naar " . htmlspecialchars($gastEmail) . ".";
+        } else {
+            $bestelMelding = "Bestelling succesvol geplaatst!";
+        }
     }
-}
-
-// Debug: Toon sessiegegevens als ze bestaan
-if (isset($_SESSION['username'])) {
-    echo "<div style='background: #dfd; padding: 10px; margin: 10px 0;'>Sessie actief!<br>";
-    echo "Gebruikersnaam: " . $_SESSION['username'] . "<br>";
-    echo "Rol: " . $_SESSION['role'] . "</div>";
-}
-
-// Debug: Toon huidige winkelmandje
-if (!empty($_SESSION['winkelwagen'])) {
-    echo "<div style='background: #ffd; padding: 10px; margin: 10px 0;'>";
-    echo "<strong>DEBUG - Winkelmandje:</strong><br>";
-    foreach ($_SESSION['winkelwagen'] as $naam => $aantal) {
-        echo htmlspecialchars($naam) . ": " . (int)$aantal . "<br>";
-    }
-    echo "</div>";
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="nl">
 
@@ -113,13 +103,18 @@ if (!empty($_SESSION['winkelwagen'])) {
         <h1>Winkelmandje</h1>
     </header>
 
+    <!-- Navigatiebalk -->
     <nav>
         <div class="topnav">
             <a class="active" href="index.php">Startpagina</a>
             <a href="winkelmand.php">Winkelmandje</a>
             <a href="bestellingen.php">Bestellingen</a>
             <a href="profiel.php">Profiel</a>
-            <a href="logout.php">Uitloggen</a>
+            <?php if (isset($_SESSION['username'])): ?>
+                <a href="logout.php">Uitloggen</a>
+            <?php else: ?>
+                <a href="login.php">Login</a>
+            <?php endif; ?>
             <a class="split" href="privacy.php">Privacy</a>
         </div>
     </nav>
@@ -127,9 +122,11 @@ if (!empty($_SESSION['winkelwagen'])) {
     <main>
         <section class="shopping-cart">
             <h2>Uw Winkelmandje</h2>
+            <!-- Toon melding na succesvolle bestelling -->
             <?php if ($bestelMelding): ?>
                 <div class="melding"><?= htmlspecialchars($bestelMelding) ?></div>
             <?php endif; ?>
+            <!-- Toon winkelmandje als er producten in zitten -->
             <?php if (!empty($_SESSION['winkelwagen'])): ?>
                 <form method="post">
                     <table>
@@ -164,6 +161,7 @@ if (!empty($_SESSION['winkelwagen'])) {
                             </tr>
                         </tfoot>
                     </table>
+                    <!-- Velden voor gast-bestelling -->
                     <?php if (!isset($_SESSION['username'])): ?>
                         <div>
                             <label for="gast_adres"><strong>Adres (verplicht voor gasten):</strong></label><br>
@@ -172,16 +170,22 @@ if (!empty($_SESSION['winkelwagen'])) {
                                 <div style="color:red;"><?= htmlspecialchars($adresFout) ?></div>
                             <?php endif; ?>
                         </div>
+                        <div>
+                            <label for="gast_email"><strong>E-mail (verplicht voor gasten):</strong></label><br>
+                            <input type="email" name="gast_email" id="gast_email" value="<?= isset($_POST['gast_email']) ? htmlspecialchars($_POST['gast_email']) : '' ?>" required>
+                        </div>
                     <?php endif; ?>
                     <button type="submit" name="bevestig_bestelling">Bestelling bevestigen</button>
                 </form>
             <?php else: ?>
+                <!-- Winkelmandje is leeg -->
                 <h2>Winkelmandje is leeg</h2>
                 <h2>Voeg Producten toe via de Startpagina</h2>
             <?php endif; ?>
         </section>
     </main>
 
+    <!-- Footer met links naar de startpagina, behalve privacy -->
     <footer>
         <a href="index.php">Legal information |</a>
         <a href="privacy.php">Privacy policy |</a>

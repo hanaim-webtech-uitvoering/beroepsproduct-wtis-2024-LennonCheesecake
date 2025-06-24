@@ -99,6 +99,26 @@
         background-color: #45a049;
     }
 
+    /* knop voor medewerker bestelling wijzigingen */
+    .wijzig-knop {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white !important;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    font-size: 1rem;
+    display: inline-block;
+    margin-top: 10px;
+    }
+
+    .wijzig-knop:hover {
+    background-color: #45a049;
+    color: white !important;
+    }
+
     /* Responsive Image Styles */
     .responsive-img {
         width: 100%;
