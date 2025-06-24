@@ -94,8 +94,13 @@ if (!empty($_SESSION['winkelwagen'])) {
                 <?php foreach ($producten as $key => $product): ?>
                     <div class="menu-box">
                         <h3><?= htmlspecialchars($product['naam']) ?></h3>
-                        <!-- Optioneel: voeg plaatjes toe op basis van naam -->
-                        <img src="Pictures/<?= str_replace(' ', '_', $product['naam']) ?>.png" alt="<?= htmlspecialchars($product['naam']) ?>" width="300" class="responsive-img">
+                        <?php
+                        $imgPath = "Pictures/" . str_replace(' ', '_', $product['naam']) . ".png";
+                        if (!file_exists($imgPath)) {
+                            $imgPath = "Pictures/placeholder.png";
+                        }
+                        ?>
+                        <img src="<?= $imgPath ?>" alt="<?= htmlspecialchars($product['naam']) ?>" width="300" class="responsive-img">
                         <h4>€<?= number_format($product['prijs'], 2, ',', '.') ?></h4>
                         <form method="post" action="">
                             <select name="aantal">

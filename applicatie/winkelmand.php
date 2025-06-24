@@ -12,11 +12,15 @@ while ($row = $stmt->fetch()) {
 
 // Bestelling bevestigen en opslaan in database
 $bestelMelding = '';
+$gastAdres = '';
+$adresFout = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bevestig_bestelling']) && !empty($_SESSION['winkelwagen'])) {
     // 1. Verzamel klantgegevens
     $client_username = isset($_SESSION['username']) ? $_SESSION['username'] : null;
     $client_name = '';
     $address = '';
+
     if ($client_username) {
         // Haal naam en adres op uit de database
         $stmtUser = $db->prepare("SELECT first_name, last_name, address FROM [Users] WHERE username = :username");
@@ -27,44 +31,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bevestig_bestelling']
             $address = $user['address'];
         }
     } else {
-        // Gast-bestelling (optioneel: vraag naam/adres via formulier)
+        // Gast-bestelling: adres verplicht
         $client_name = 'Gast';
-        $address = '';
+        $gastAdres = isset($_POST['gast_adres']) ? trim($_POST['gast_adres']) : '';
+        if (empty($gastAdres)) {
+            $adresFout = "Vul uw adres in om te bestellen.";
+        } else {
+            $address = $gastAdres;
+        }
     }
 
-    // 2. Personeelslid is nog niet bekend bij bestelling plaatsen, vul met lege string of 'onbekend'
-    $personnel_username = 'LennonM';
+    // Alleen verder als er geen adresfout is
+    if (empty($adresFout)) {
+        // 2. Personeelslid is nog niet bekend bij bestelling plaatsen, zet op NULL
+        $personnel_username = 'LennonM';
 
-    // 3. Status op 1 (bijvoorbeeld 'nieuw')
-    $status = 1;
+        // 3. Status op 1 (bijvoorbeeld 'nieuw')
+        $status = 1;
 
-    // 4. Voeg bestelling toe aan Pizza_Order
-    $insertOrder = $db->prepare("INSERT INTO [Pizza_Order] (client_username, client_name, personnel_username, datetime, status, address)
-        VALUES (:client_username, :client_name, :personnel_username, GETDATE(), :status, :address)");
-    $insertOrder->execute([
-        'client_username' => $client_username,
-        'client_name' => $client_name,
-        'personnel_username' => $personnel_username,
-        'status' => $status,
-        'address' => $address
-    ]);
-
-    // 5. Haal het order_id op
-    $orderId = $db->lastInsertId();
-
-    // 6. Voeg producten toe aan Pizza_Order_Product
-    $insertProduct = $db->prepare("INSERT INTO [Pizza_Order_Product] (order_id, product_name, quantity) VALUES (:order_id, :product_name, :quantity)");
-    foreach ($_SESSION['winkelwagen'] as $naam => $aantal) {
-        $insertProduct->execute([
-            'order_id' => $orderId,
-            'product_name' => $naam,
-            'quantity' => $aantal
+        // 4. Voeg bestelling toe aan Pizza_Order
+        $insertOrder = $db->prepare("INSERT INTO [Pizza_Order] (client_username, client_name, personnel_username, datetime, status, address)
+            VALUES (:client_username, :client_name, :personnel_username, GETDATE(), :status, :address)");
+        $insertOrder->execute([
+            'client_username' => $client_username,
+            'client_name' => $client_name,
+            'personnel_username' => $personnel_username,
+            'status' => $status,
+            'address' => $address
         ]);
-    }
 
-    // 7. Leeg het winkelmandje en geef een melding
-    $_SESSION['winkelwagen'] = [];
-    $bestelMelding = "Bestelling succesvol geplaatst!";
+        // 5. Haal het order_id op
+        $orderId = $db->lastInsertId();
+
+        // 6. Voeg producten toe aan Pizza_Order_Product
+        $insertProduct = $db->prepare("INSERT INTO [Pizza_Order_Product] (order_id, product_name, quantity) VALUES (:order_id, :product_name, :quantity)");
+        foreach ($_SESSION['winkelwagen'] as $naam => $aantal) {
+            $insertProduct->execute([
+                'order_id' => $orderId,
+                'product_name' => $naam,
+                'quantity' => $aantal
+            ]);
+        }
+
+        // 7. Leeg het winkelmandje en geef een melding
+        $_SESSION['winkelwagen'] = [];
+        $bestelMelding = "Bestelling succesvol geplaatst!";
+    }
+}
+
+// Debug: Toon sessiegegevens als ze bestaan
+if (isset($_SESSION['username'])) {
+    echo "<div style='background: #dfd; padding: 10px; margin: 10px 0;'>Sessie actief!<br>";
+    echo "Gebruikersnaam: " . $_SESSION['username'] . "<br>";
+    echo "Rol: " . $_SESSION['role'] . "</div>";
+}
+
+// Debug: Toon huidige winkelmandje
+if (!empty($_SESSION['winkelwagen'])) {
+    echo "<div style='background: #ffd; padding: 10px; margin: 10px 0;'>";
+    echo "<strong>DEBUG - Winkelmandje:</strong><br>";
+    foreach ($_SESSION['winkelwagen'] as $naam => $aantal) {
+        echo htmlspecialchars($naam) . ": " . (int)$aantal . "<br>";
+    }
+    echo "</div>";
 }
 ?>
 
@@ -135,6 +164,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bevestig_bestelling']
                             </tr>
                         </tfoot>
                     </table>
+                    <?php if (!isset($_SESSION['username'])): ?>
+                        <div>
+                            <label for="gast_adres"><strong>Adres (verplicht voor gasten):</strong></label><br>
+                            <input type="text" name="gast_adres" id="gast_adres" value="<?= htmlspecialchars($gastAdres) ?>" required>
+                            <?php if ($adresFout): ?>
+                                <div style="color:red;"><?= htmlspecialchars($adresFout) ?></div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
                     <button type="submit" name="bevestig_bestelling">Bestelling bevestigen</button>
                 </form>
             <?php else: ?>
