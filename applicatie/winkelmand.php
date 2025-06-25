@@ -2,13 +2,52 @@
 session_start();
 require_once 'db_connection.php';
 
-// Haal producten/prijzen op uit de database voor prijsberekening
-$db = maakVerbinding();
-$stmt = $db->query("SELECT name, price FROM [Product]");
-$prijzen = [];
-while ($row = $stmt->fetch()) {
-    $prijzen[$row['name']] = $row['price'];
+// Functie om prijzen op te halen uit de database
+function haalPrijzenOp($db) {
+    $stmt = $db->query("SELECT name, price FROM [Product]");
+    $prijzen = [];
+    while ($row = $stmt->fetch()) {
+        $prijzen[$row['name']] = $row['price'];
+    }
+    return $prijzen;
 }
+
+// Functie om gebruikersgegevens op te halen
+function haalGebruikerOp($db, $username) {
+    $stmt = $db->prepare("SELECT first_name, last_name, address FROM [Users] WHERE username = :username");
+    $stmt->execute(['username' => $username]);
+    return $stmt->fetch();
+}
+
+// Functie om een bestelling toe te voegen
+function voegBestellingToe($db, $client_username, $client_name, $personnel_username, $status, $address) {
+    $insertOrder = $db->prepare("INSERT INTO [Pizza_Order] (client_username, client_name, personnel_username, datetime, status, address)
+        VALUES (:client_username, :client_name, :personnel_username, GETDATE(), :status, :address)");
+    $insertOrder->execute([
+        'client_username' => $client_username,
+        'client_name' => $client_name,
+        'personnel_username' => $personnel_username,
+        'status' => $status,
+        'address' => $address
+    ]);
+    return $db->lastInsertId();
+}
+
+// Functie om producten toe te voegen aan een bestelling
+function voegProductenToe($db, $orderId, $winkelwagen) {
+    $insertProduct = $db->prepare("INSERT INTO [Pizza_Order_Product] (order_id, product_name, quantity) VALUES (:order_id, :product_name, :quantity)");
+    foreach ($winkelwagen as $naam => $aantal) {
+        $insertProduct->execute([
+            'order_id' => $orderId,
+            'product_name' => $naam,
+            'quantity' => $aantal
+        ]);
+    }
+}
+
+// Start databaseverbinding en prijzen ophalen
+$db = maakVerbinding();
+$prijzen = haalPrijzenOp($db);
 
 // Variabelen voor meldingen en gastgegevens
 $bestelMelding = '';
@@ -24,9 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bevestig_bestelling']
 
     if ($client_username) {
         // Haal naam en adres op uit de database voor ingelogde gebruiker
-        $stmtUser = $db->prepare("SELECT first_name, last_name, address FROM [Users] WHERE username = :username");
-        $stmtUser->execute(['username' => $client_username]);
-        $user = $stmtUser->fetch();
+        $user = haalGebruikerOp($db, $client_username);
         if ($user) {
             $client_name = $user['first_name'] . ' ' . $user['last_name'];
             $address = $user['address'];
@@ -47,35 +84,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bevestig_bestelling']
 
     // Alleen verder als er geen adresfout is
     if (empty($adresFout)) {
-        // Zet het personeel_username vast (bijvoorbeeld 'LennonM')
-        $personnel_username = 'TestM';
+        $personnel_username = 'TestM'; // Zet het personeel_username vast
+        $status = 1; // Bestelling ontvangen
 
-        // Status op 1 (Bestelling ontvangen)
-        $status = 1;
-
-        // Voeg bestelling toe aan Pizza_Order
-        $insertOrder = $db->prepare("INSERT INTO [Pizza_Order] (client_username, client_name, personnel_username, datetime, status, address)
-            VALUES (:client_username, :client_name, :personnel_username, GETDATE(), :status, :address)");
-        $insertOrder->execute([
-            'client_username' => $client_username,
-            'client_name' => $client_name,
-            'personnel_username' => $personnel_username,
-            'status' => $status,
-            'address' => $address
-        ]);
-
-        // Haal het order_id op van de zojuist toegevoegde bestelling
-        $orderId = $db->lastInsertId();
-
-        // Voeg producten toe aan Pizza_Order_Product
-        $insertProduct = $db->prepare("INSERT INTO [Pizza_Order_Product] (order_id, product_name, quantity) VALUES (:order_id, :product_name, :quantity)");
-        foreach ($_SESSION['winkelwagen'] as $naam => $aantal) {
-            $insertProduct->execute([
-                'order_id' => $orderId,
-                'product_name' => $naam,
-                'quantity' => $aantal
-            ]);
-        }
+        // Voeg bestelling toe en producten toe via functies
+        $orderId = voegBestellingToe($db, $client_username, $client_name, $personnel_username, $status, $address);
+        voegProductenToe($db, $orderId, $_SESSION['winkelwagen']);
 
         // Leeg het winkelmandje en geef een melding
         $_SESSION['winkelwagen'] = [];
