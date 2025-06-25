@@ -3,10 +3,78 @@
 require_once 'db_connection.php'; // Verbind met de database
 require_once 'sanitizeS.php';      // Functie om invoer te schonen
 
-$db = maakVerbinding();            // Maak databaseverbinding
-$fouten = [];                      // Array voor foutmeldingen
-$foutmelding = '';                 // HTML voor foutmeldingen
-$melding = '';                     // HTML voor succesmelding
+// Functie om invoer te valideren
+function valideerRegistratie($gebruikersnaam, $wachtwoord, $wachtwoordcheck, $voornaam, $achternaam, $adres) {
+    $fouten = [];
+
+    if (strlen($gebruikersnaam) < 4) {
+        $fouten[] = 'Gebruikersnaam moet minstens 4 karakters lang zijn.';
+    }
+    if (strlen($gebruikersnaam) > 200) {
+        $fouten[] = 'Gebruikersnaam mag maximaal 200 karakters lang zijn.';
+    }
+    if (empty($wachtwoord)) {
+        $fouten[] = 'Wachtwoord is verplicht.';
+    }
+    if (strlen($wachtwoord) < 8) {
+        $fouten[] = 'Wachtwoord moet minstens 8 karakters lang zijn.';
+    }
+    if (strlen($wachtwoord) > 50) {
+        $fouten[] = 'Wachtwoord mag maximaal 50 karakters lang zijn.';
+    }
+    if ($wachtwoordcheck != $wachtwoord) {
+        $fouten[] = 'Wachtwoorden komen niet overeen.';
+    }
+    $passwordPattern = '/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$/';
+    if (!preg_match($passwordPattern, $wachtwoord)) {
+        $fouten[] = 'Wachtwoord moet minstens 1 hoofdletter, 1 kleine letter, 1 cijfer en 1 speciaal karakter bevatten.';
+    }
+    if (empty($voornaam)) {
+        $fouten[] = 'Voornaam is verplicht.';
+    }
+    if (strlen($voornaam) > 20) {
+        $fouten[] = 'Voornaam mag maximaal 20 karakters lang zijn.';
+    }
+    if (empty($achternaam)) {
+        $fouten[] = 'Achternaam is verplicht.';
+    }
+    if (strlen($achternaam) > 50) {
+        $fouten[] = 'Achternaam mag maximaal 50 karakters lang zijn.';
+    }
+    if (strlen($adres) > 255) {
+        $fouten[] = 'Adres mag maximaal 255 karakters lang zijn.';
+    }
+
+    return $fouten;
+}
+
+// Functie om te controleren of gebruikersnaam al bestaat
+function gebruikersnaamBestaat($db, $gebruikersnaam) {
+    $checkquery = "SELECT COUNT(username) AS COUNT FROM [Users] WHERE username = :gebruikersnaam";
+    $check = $db->prepare($checkquery);
+    $check->execute(['gebruikersnaam' => $gebruikersnaam]);
+    $result = $check->fetch();
+    return $result['COUNT'] > 0;
+}
+
+// Functie om gebruiker toe te voegen
+function voegGebruikerToe($db, $gebruikersnaam, $hash, $voornaam, $achternaam, $adres) {
+    $sql = "INSERT INTO [Users] (username, password, first_name, last_name, address, role)
+            VALUES (:gebruikersnaam, :wachtwoord, :voornaam, :achternaam, :adres, 'Client')";
+    $query = $db->prepare($sql);
+    return $query->execute([
+        'gebruikersnaam' => $gebruikersnaam,
+        'voornaam' => $voornaam,
+        'achternaam' => $achternaam,
+        'adres' => $adres,
+        'wachtwoord' => $hash
+    ]);
+}
+
+$db = maakVerbinding();
+$fouten = [];
+$foutmelding = '';
+$melding = '';
 $gebruikersnaam = '';
 $wachtwoord = '';
 $wachtwoordcheck = '';
@@ -25,78 +93,17 @@ if (isset($_POST['registreren'])) {
     $achternaam = sanitize($_POST['achternaam']);
     $adres = sanitize($_POST['adres']);
 
-    // Valideer gebruikersnaam
-    if (strlen($gebruikersnaam) < 4) {
-        $fouten[] = 'Gebruikersnaam moet minstens 4 karakters lang zijn.';
-    }
-    if (strlen($gebruikersnaam) > 200) {
-        $fouten[] = 'Gebruikersnaam mag maximaal 200 karakters lang zijn.';
-    }
-
-    // Valideer wachtwoord
-    if (empty($wachtwoord)) {
-        $fouten[] = 'Wachtwoord is verplicht.';
-    }
-    if (strlen($wachtwoord) < 8) {
-        $fouten[] = 'Wachtwoord moet minstens 8 karakters lang zijn.';
-    }
-    if (strlen($wachtwoord) > 50) {
-        $fouten[] = 'Wachtwoord mag maximaal 50 karakters lang zijn.';
-    }
-    if ($wachtwoordcheck != $wachtwoord) {
-        $fouten[] = 'Wachtwoorden komen niet overeen.';
-    }
-    // Controleer op minimaal 1 hoofdletter, kleine letter, cijfer en speciaal teken
-    $passwordPattern = '/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$/';
-    if (!preg_match($passwordPattern, $wachtwoord)) {
-        $fouten[] = 'Wachtwoord moet minstens 1 hoofdletter, 1 kleine letter, 1 cijfer en 1 speciaal karakter bevatten.';
-    }
-
-    // Valideer voornaam
-    if (empty($voornaam)) {
-        $fouten[] = 'Voornaam is verplicht.';
-    }
-    if (strlen($voornaam) > 20) {
-        $fouten[] = 'Voornaam mag maximaal 20 karakters lang zijn.';
-    }
-
-    // Valideer achternaam
-    if (empty($achternaam)) {
-        $fouten[] = 'Achternaam is verplicht.';
-    }
-    if (strlen($achternaam) > 50) {
-        $fouten[] = 'Achternaam mag maximaal 50 karakters lang zijn.';
-    }
-
-    // Valideer adres (optioneel)
-    if (strlen($adres) > 255) {
-        $fouten[] = 'Adres mag maximaal 255 karakters lang zijn.';
-    }
+    // Valideer invoer
+    $fouten = valideerRegistratie($gebruikersnaam, $wachtwoord, $wachtwoordcheck, $voornaam, $achternaam, $adres);
 
     // Voeg gegevens toe als er geen fouten zijn
     if (empty($fouten)) {
         $hash = password_hash($wachtwoord, PASSWORD_DEFAULT); // Hash het wachtwoord
 
-        // Controleer of gebruikersnaam al bestaat
-        $checkquery = "SELECT COUNT(username) AS COUNT FROM [Users] WHERE username = :gebruikersnaam";
-        $check = $db->prepare($checkquery);
-        $check->execute(['gebruikersnaam' => $gebruikersnaam]);
-        $result = $check->fetch();
-
-        if ($result['COUNT'] > 0) {
+        if (gebruikersnaamBestaat($db, $gebruikersnaam)) {
             $melding = 'Gebruikersnaam bestaat al in de database!';
         } else {
-            // Voeg nieuwe gebruiker toe aan de database
-            $sql = "INSERT INTO [Users] (username, password, first_name, last_name, address, role)
-                    VALUES (:gebruikersnaam, :wachtwoord, :voornaam, :achternaam, :adres, 'Client')";
-            $query = $db->prepare($sql);
-            $success = $query->execute([
-                'gebruikersnaam' => $gebruikersnaam,
-                'voornaam' => $voornaam,
-                'achternaam' => $achternaam,
-                'adres' => $adres,
-                'wachtwoord' => $hash
-            ]);
+            $success = voegGebruikerToe($db, $gebruikersnaam, $hash, $voornaam, $achternaam, $adres);
 
             // Reset velden bij succes
             if ($success) {

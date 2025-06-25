@@ -2,30 +2,39 @@
 session_start();
 require_once 'db_connection.php'; // Verbind met de database
 
-// Haal producten op uit de database
-$db = maakVerbinding();
-$stmt = $db->query("SELECT name, price FROM [Product]");
-$producten = [];
-while ($row = $stmt->fetch()) {
-    $producten[$row['name']] = [
-        'naam' => $row['name'],
-        'prijs' => $row['price']
-    ];
+// Functie om producten op te halen uit de database
+function haalProductenOp($db) {
+    $stmt = $db->query("SELECT name, price FROM [Product]");
+    $producten = [];
+    while ($row = $stmt->fetch()) {
+        $producten[$row['name']] = [
+            'naam' => $row['name'],
+            'prijs' => $row['price']
+        ];
+    }
+    return $producten;
 }
+
+// Functie om een product toe te voegen aan het winkelmandje
+function voegToeAanWinkelwagen($product, $aantal, &$producten) {
+    if (isset($producten[$product]) && $aantal > 0) {
+        if (!isset($_SESSION['winkelwagen'][$product])) {
+            $_SESSION['winkelwagen'][$product] = 0;
+        }
+        $_SESSION['winkelwagen'][$product] += $aantal;
+        $_SESSION['melding'] = "Product toegevoegd aan winkelwagen!";
+    }
+}
+
+// Maak verbinding met de database en haal producten op
+$db = maakVerbinding();
+$producten = haalProductenOp($db);
 
 // Voeg toe aan winkelwagen als er op de knop gedrukt is
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product'], $_POST['aantal'])) {
     $product = $_POST['product'];
     $aantal = (int)$_POST['aantal'];
-    if (isset($producten[$product]) && $aantal > 0) {
-        // Voeg toe of verhoog aantal in winkelwagen
-        if (!isset($_SESSION['winkelwagen'][$product])) {
-            $_SESSION['winkelwagen'][$product] = 0;
-        }
-        $_SESSION['winkelwagen'][$product] += $aantal;
-        // Zet een melding in de sessie
-        $_SESSION['melding'] = "Product toegevoegd aan winkelwagen!";
-    }
+    voegToeAanWinkelwagen($product, $aantal, $producten);
     // Redirect naar dezelfde pagina om dubbele invoer te voorkomen
     header("Location: index.php");
     exit;

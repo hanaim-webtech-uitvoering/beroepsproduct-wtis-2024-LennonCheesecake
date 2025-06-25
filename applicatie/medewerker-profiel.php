@@ -2,17 +2,22 @@
 session_start();
 require_once 'db_connection.php';
 
+// Functie om medewerkergegevens op te halen
+function haalMedewerkerGegevensOp($db, $username) {
+    $stmt = $db->prepare("SELECT username, first_name, last_name, address FROM [Users] WHERE username = :username");
+    $stmt->execute(['username' => $username]);
+    return $stmt->fetch();
+}
+
 // Controleer of de gebruiker een medewerker is, anders terug naar login
 if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'Medewerker') {
     header('Location: medewerker-login.php');
     exit;
 }
 
-// Haal medewerkergegevens op uit de database
+// Haal medewerkergegevens op via de functie
 $db = maakVerbinding();
-$stmt = $db->prepare("SELECT username, first_name, last_name, address FROM [Users] WHERE username = :username");
-$stmt->execute(['username' => $_SESSION['username']]);
-$medewerker = $stmt->fetch();
+$medewerker = haalMedewerkerGegevensOp($db, $_SESSION['username']);
 
 if (!$medewerker) {
     // Medewerker niet gevonden, toon melding en stop

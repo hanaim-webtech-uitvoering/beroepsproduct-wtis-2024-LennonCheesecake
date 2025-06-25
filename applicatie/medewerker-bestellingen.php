@@ -10,30 +10,34 @@ if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || $_SESSION['rol
 
 $db = maakVerbinding();
 
-// Haal alle bestellingen op uit de database
-$stmt = $db->prepare("SELECT * FROM [Pizza_Order] ORDER BY datetime DESC");
-$stmt->execute();
-$bestellingen = $stmt->fetchAll();
+// Functie om alle bestellingen op te halen
+function haalAlleBestellingenOp($db) {
+    $stmt = $db->prepare("SELECT * FROM [Pizza_Order] ORDER BY datetime DESC");
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
 
-// Haal per bestelling de producten op
-foreach ($bestellingen as &$bestelling) {
+// Functie om producten bij een bestelling op te halen
+function haalProductenBijBestellingOp($db, $order_id) {
     $stmtProd = $db->prepare("SELECT p.product_name, p.quantity, pr.price 
         FROM [Pizza_Order_Product] p
         JOIN [Product] pr ON p.product_name = pr.name
         WHERE p.order_id = :order_id");
-    $stmtProd->execute(['order_id' => $bestelling['order_id']]);
-    $bestelling['producten'] = $stmtProd->fetchAll();
+    $stmtProd->execute(['order_id' => $order_id]);
+    return $stmtProd->fetchAll();
 }
-unset($bestelling); // Verbreek de referentie na gebruik
 
-// Groepeer bestellingen per klantnaam
-$klanten = [];
-foreach ($bestellingen as $bestelling) {
-    $klant = $bestelling['client_name'];
-    if (!isset($klanten[$klant])) {
-        $klanten[$klant] = [];
+// Functie om bestellingen te groeperen per klantnaam
+function groepeerBestellingenPerKlant($bestellingen) {
+    $klanten = [];
+    foreach ($bestellingen as $bestelling) {
+        $klant = $bestelling['client_name'];
+        if (!isset($klanten[$klant])) {
+            $klanten[$klant] = [];
+        }
+        $klanten[$klant][] = $bestelling;
     }
-    $klanten[$klant][] = $bestelling;
+    return $klanten;
 }
 
 // Functie om de status van een bestelling om te zetten naar tekst
@@ -47,6 +51,16 @@ function statusText($status) {
         default: return "Onbekend";
     }
 }
+
+// Haal alle bestellingen op en voeg producten toe
+$bestellingen = haalAlleBestellingenOp($db);
+foreach ($bestellingen as &$bestelling) {
+    $bestelling['producten'] = haalProductenBijBestellingOp($db, $bestelling['order_id']);
+}
+unset($bestelling);
+
+// Groepeer bestellingen per klantnaam
+$klanten = groepeerBestellingenPerKlant($bestellingen);
 
 // Klanten ophalen voor de dropdown
 $stmtKlanten = $db->prepare("SELECT DISTINCT client_name FROM [Pizza_Order]");

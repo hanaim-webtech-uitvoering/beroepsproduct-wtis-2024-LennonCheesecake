@@ -2,18 +2,22 @@
 session_start();
 require_once 'db_connection.php';
 
+// Functie om gebruikersgegevens op te halen
+function haalGebruikerGegevensOp($db, $gebruikersnaam) {
+    $stmt = $db->prepare("SELECT username, first_name, last_name, address, role FROM [Users] WHERE username = :gebruikersnaam");
+    $stmt->execute(['gebruikersnaam' => $gebruikersnaam]);
+    return $stmt->fetch();
+}
+
 // Controleer of de gebruiker is ingelogd, anders terug naar loginpagina
 if (!isset($_SESSION['username'])) {
     header('Location: login.php');
     exit;
 }
 
-// Haal de gebruikersgegevens op uit de database (inclusief rol)
+// Haal de gebruikersgegevens op via de functie
 $db = maakVerbinding();
-$sql = "SELECT username, first_name, last_name, address, role FROM [Users] WHERE username = :gebruikersnaam";
-$stmt = $db->prepare($sql);
-$stmt->execute(['gebruikersnaam' => $_SESSION['username']]);
-$user = $stmt->fetch();
+$user = haalGebruikerGegevensOp($db, $_SESSION['username']);
 
 if (!$user) {
     // Gebruiker bestaat niet meer in de database

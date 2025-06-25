@@ -6,20 +6,17 @@ session_start(); // Start een sessie
 
 $melding = ''; // Voor foutmeldingen
 
-// Verwerk het inlogformulier als er is gepost
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Haal en schoon de invoer op
-    $gebruikersnaam = sanitize($_POST['gebruikersnaam']);
-    $wachtwoord = sanitize($_POST['wachtwoord']);
-
-    // Zoek medewerker op in de database (alleen als rol 'Medewerker' is)
-    $db = maakVerbinding();
+// Functie om medewerker op te halen uit de database
+function haalMedewerkerOp($db, $gebruikersnaam) {
     $sql = "SELECT * FROM [Users] WHERE username = :gebruikersnaam AND role = 'Medewerker'";
     $stmt = $db->prepare($sql);
     $stmt->execute(['gebruikersnaam' => $gebruikersnaam]);
-    $user = $stmt->fetch();
+    return $stmt->fetch();
+}
 
-    // Controleer of medewerker bestaat en wachtwoord klopt
+// Functie om login te verwerken
+function verwerkMedewerkerLogin($db, $gebruikersnaam, $wachtwoord) {
+    $user = haalMedewerkerOp($db, $gebruikersnaam);
     if ($user && password_verify($wachtwoord, $user['password'])) {
         // Inloggen gelukt, sla info op in sessie
         $_SESSION['username'] = $user['username'];
@@ -28,8 +25,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     } else {
         // Foutmelding bij ongeldige inlog of geen medewerker-rechten
-        $melding = 'Ongeldige gebruikersnaam, wachtwoord of geen medewerker-rechten.';
+        return 'Ongeldige gebruikersnaam, wachtwoord of geen medewerker-rechten.';
     }
+}
+
+// Verwerk het inlogformulier als er is gepost
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Haal en schoon de invoer op
+    $gebruikersnaam = sanitize($_POST['gebruikersnaam']);
+    $wachtwoord = sanitize($_POST['wachtwoord']);
+
+    // Maak verbinding en verwerk login
+    $db = maakVerbinding();
+    $melding = verwerkMedewerkerLogin($db, $gebruikersnaam, $wachtwoord);
 }
 ?>
 <!DOCTYPE html>

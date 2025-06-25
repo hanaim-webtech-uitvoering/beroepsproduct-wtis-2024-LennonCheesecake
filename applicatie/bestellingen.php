@@ -2,29 +2,21 @@
 session_start();
 require_once 'db_connection.php';
 
-// Maak verbinding met de database
-$db = maakVerbinding();
-$bestellingen = [];
-
-// Alleen bestellingen tonen als gebruiker is ingelogd
-if (isset($_SESSION['username'])) {
-    $username = $_SESSION['username'];
-
-    // Haal alle bestellingen van deze gebruiker op
+// Functie om bestellingen van een gebruiker op te halen
+function haalBestellingenOp($db, $username) {
     $stmt = $db->prepare("SELECT * FROM [Pizza_Order] WHERE client_username = :username ORDER BY datetime DESC");
     $stmt->execute(['username' => $username]);
-    $bestellingen = $stmt->fetchAll();
+    return $stmt->fetchAll();
+}
 
-    // Haal alle producten per bestelling op
-    foreach ($bestellingen as &$bestelling) {
-        $stmtProd = $db->prepare("SELECT p.product_name, p.quantity, pr.price 
-            FROM [Pizza_Order_Product] p
-            JOIN [Product] pr ON p.product_name = pr.name
-            WHERE p.order_id = :order_id");
-        $stmtProd->execute(['order_id' => $bestelling['order_id']]);
-        $bestelling['producten'] = $stmtProd->fetchAll();
-    }
-    unset($bestelling); // Verbreek de referentie na gebruik
+// Functie om producten bij een bestelling op te halen
+function haalProductenBijBestellingOp($db, $order_id) {
+    $stmtProd = $db->prepare("SELECT p.product_name, p.quantity, pr.price 
+        FROM [Pizza_Order_Product] p
+        JOIN [Product] pr ON p.product_name = pr.name
+        WHERE p.order_id = :order_id");
+    $stmtProd->execute(['order_id' => $order_id]);
+    return $stmtProd->fetchAll();
 }
 
 // Functie om de status van een bestelling om te zetten naar tekst
@@ -37,6 +29,22 @@ function statusText($status) {
         case 5: return "Bezorgd";
         default: return "Onbekend";
     }
+}
+
+// Maak verbinding met de database
+$db = maakVerbinding();
+$bestellingen = [];
+
+// Alleen bestellingen tonen als gebruiker is ingelogd
+if (isset($_SESSION['username'])) {
+    $username = $_SESSION['username'];
+    $bestellingen = haalBestellingenOp($db, $username);
+
+    // Haal alle producten per bestelling op
+    foreach ($bestellingen as &$bestelling) {
+        $bestelling['producten'] = haalProductenBijBestellingOp($db, $bestelling['order_id']);
+    }
+    unset($bestelling); // Verbreek de referentie na gebruik
 }
 ?>
 <!DOCTYPE html>

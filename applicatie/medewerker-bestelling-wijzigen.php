@@ -2,7 +2,7 @@
 session_start();
 require_once 'db_connection.php';
 
-// Alleen toegankelijk voor medewerkers
+// Controleer of medewerker is ingelogd
 if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'Medewerker') {
     header('Location: medewerker-login.php');
     exit;
@@ -10,40 +10,30 @@ if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || $_SESSION['rol
 
 $db = maakVerbinding();
 
-// Haal order_id uit de URL
-$order_id = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;
-
-// Haal de bestelling op uit de database
-$stmt = $db->prepare("SELECT * FROM [Pizza_Order] WHERE order_id = :order_id");
-$stmt->execute(['order_id' => $order_id]);
-$bestelling = $stmt->fetch();
-
-if (!$bestelling) {
-    // Bestelling niet gevonden, toon melding en stop
-    echo "<p>Bestelling niet gevonden.</p>";
-    exit;
+// Functie om bestelling op te halen
+function haalBestellingOp($db, $order_id) {
+    $stmt = $db->prepare("SELECT * FROM [Pizza_Order] WHERE order_id = :order_id");
+    $stmt->execute(['order_id' => $order_id]);
+    return $stmt->fetch();
 }
 
-// Haal producten bij deze bestelling op
-$stmtProd = $db->prepare("SELECT p.product_name, p.quantity, pr.price 
-    FROM [Pizza_Order_Product] p
-    JOIN [Product] pr ON p.product_name = pr.name
-    WHERE p.order_id = :order_id");
-$stmtProd->execute(['order_id' => $order_id]);
-$productList = $stmtProd->fetchAll();
+// Functie om producten bij bestelling op te halen
+function haalProductenBijBestellingOp($db, $order_id) {
+    $stmtProd = $db->prepare("SELECT p.product_name, p.quantity, pr.price 
+        FROM [Pizza_Order_Product] p
+        JOIN [Product] pr ON p.product_name = pr.name
+        WHERE p.order_id = :order_id");
+    $stmtProd->execute(['order_id' => $order_id]);
+    return $stmtProd->fetchAll();
+}
 
-// Status wijzigen als het formulier is verstuurd
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
-    $nieuweStatus = (int)$_POST['status'];
+// Functie om status van bestelling te wijzigen
+function wijzigStatus($db, $order_id, $nieuweStatus) {
     $update = $db->prepare("UPDATE [Pizza_Order] SET status = :status WHERE order_id = :order_id");
     $update->execute(['status' => $nieuweStatus, 'order_id' => $order_id]);
-    // Stuur terug naar medewerker-bestellingen.php met klant als parameter
-    $klant = urlencode($bestelling['client_name']);
-    header("Location: medewerker-bestellingen.php?klant=$klant");
-    exit;
 }
 
-// Functie om de status van een bestelling om te zetten naar tekst
+// Functie om status naar tekst om te zetten
 function statusText($status) {
     switch ($status) {
         case 1: return "Bestelling ontvangen";
@@ -53,6 +43,29 @@ function statusText($status) {
         case 5: return "Bezorgd";
         default: return "Onbekend";
     }
+}
+
+// Haal order_id uit de URL
+$order_id = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;
+
+// Haal de bestelling op
+$bestelling = haalBestellingOp($db, $order_id);
+
+if (!$bestelling) {
+    echo "<p>Bestelling niet gevonden.</p>";
+    exit;
+}
+
+// Haal producten bij deze bestelling op
+$productList = haalProductenBijBestellingOp($db, $order_id);
+
+// Status wijzigen als het formulier is verstuurd
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
+    $nieuweStatus = (int)$_POST['status'];
+    wijzigStatus($db, $order_id, $nieuweStatus);
+    $klant = urlencode($bestelling['client_name']);
+    header("Location: medewerker-bestellingen.php?klant=$klant");
+    exit;
 }
 ?>
 <!DOCTYPE html>
